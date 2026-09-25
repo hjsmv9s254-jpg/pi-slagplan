@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PI-slagplan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Semi+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#ECEFEB; --surface:#FFFFFF; --surface-2:#F5F7F3; --ink:#162024; --muted:#56656B; --faint:#8A979C;
+  --rule:#D2D8D2; --rule-2:#E3E7E2; --accent:#0D6A86; --accent-soft:#DCEDF2; --accent-ink:#FFFFFF;
+  --ok:#2C7549; --ok-bg:#E1F0E6; --warn:#9E6310; --warn-bg:#FAEFD9; --crit:#B3302A; --crit-bg:#F8E1DE;
+  --t-PRO:#2F6FA8; --t-PIP:#8A5A2B; --t-STR:#5B6770; --t-EI:#7A4A9A; --t-INN:#2C7A6E; --t-OFF:#B0472E;
+  --shadow:0 1px 2px rgba(22,32,36,.07),0 2px 8px rgba(22,32,36,.05);
+  --f-disp:"Saira Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#101619; --surface:#182126; --surface-2:#1D272C; --ink:#E3E9E7; --muted:#9AA8AD; --faint:#6D7B80;
+  --rule:#2C383E; --rule-2:#243036; --accent:#4DB2D0; --accent-soft:#16333D; --accent-ink:#0B1316;
+  --ok:#62BD85; --ok-bg:#16301F; --warn:#E0A64A; --warn-bg:#35280F; --crit:#EF7A70; --crit-bg:#3A1A18;
+  --t-PRO:#6FA8DC; --t-PIP:#C99A68; --t-STR:#9AA7B0; --t-EI:#B592D0; --t-INN:#5FBBAC; --t-OFF:#E48467;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101619; --surface:#182126; --surface-2:#1D272C; --ink:#E3E9E7; --muted:#9AA8AD; --faint:#6D7B80;
+  --rule:#2C383E; --rule-2:#243036; --accent:#4DB2D0; --accent-soft:#16333D; --accent-ink:#0B1316;
+  --ok:#62BD85; --ok-bg:#16301F; --warn:#E0A64A; --warn-bg:#35280F; --crit:#EF7A70; --crit-bg:#3A1A18;
+  --t-PRO:#6FA8DC; --t-PIP:#C99A68; --t-STR:#9AA7B0; --t-EI:#B592D0; --t-INN:#5FBBAC; --t-OFF:#E48467;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:14px/1.45 var(--f-body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1480px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-disp);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:22px;line-height:1.15}
+h2{font-size:18px}
+h3{font-size:15px}
+.mono{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.lbl{font-family:var(--f-disp);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-block:18px 12px;border-bottom:1px solid var(--rule)}
+.pi-meta{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin-top:4px}
+.pi-tag{font-family:var(--f-disp);font-weight:700;font-size:13px;letter-spacing:.06em;background:var(--ink);color:var(--bg);padding:2px 8px;border-radius:3px}
+.mode{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--rule);color:var(--muted)}
+.mode.demo{border-color:var(--warn);color:var(--warn)}
+.mode.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap}
+nav.tabs button{background:none;border:0;padding:8px 12px;font-family:var(--f-disp);font-weight:600;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;letter-spacing:.02em}
+nav.tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button:hover{color:var(--ink)}
+main{padding-top:18px}
+
+/* sprint ruler */
+.ruler-wrap{overflow-x:auto;margin-bottom:14px}
+.ruler{display:grid;grid-template-columns:repeat(var(--n),minmax(110px,1fr));gap:2px;min-width:660px}
+.ruler div{background:var(--surface);padding:6px 10px;border-top:3px solid var(--rule)}
+.ruler div.now{border-top-color:var(--accent)}
+.ruler div.ip{background:var(--surface-2)}
+.ruler b{font-family:var(--f-disp);font-size:14px}
+.ruler span{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:99px;white-space:nowrap;line-height:1.6}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.crit{background:var(--crit-bg);color:var(--crit)}
+.pill.neutral{background:var(--surface-2);color:var(--muted);border:1px solid var(--rule-2)}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex:none}
+.dot.warn{background:var(--warn)} .dot.crit{background:var(--crit)} .dot.ok{background:var(--ok)}
+.team{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+.team i{width:9px;height:9px;border-radius:50%;background:var(--tc);flex:none}
+
+/* board */
+.board-scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--rule);border-radius:4px}
+.board{display:grid;grid-template-columns:150px minmax(190px,1fr) repeat(var(--n),minmax(190px,1fr));gap:1px;min-width:1500px}
+.board .h{background:var(--surface-2);padding:8px 10px;position:sticky;top:0}
+.board .h b{font-family:var(--f-disp);font-size:14px}
+.board .h span{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.board .rowh{background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:4px;border-left:4px solid var(--tc)}
+.board .rowh b{font-family:var(--f-disp);font-size:14px;line-height:1.2}
+.board .ms{background:var(--surface-2);padding:6px 8px;display:flex;flex-direction:column;gap:4px;min-height:34px}
+.msflag{display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:1.3;cursor:pointer;background:none;border:0;padding:0;text-align:left}
+.msflag svg{flex:none;margin-top:1px}
+.cell{background:var(--surface);padding:6px;display:flex;flex-direction:column;gap:5px;min-height:92px;transition:background .12s}
+.cell.backlog{background:var(--surface-2)}
+.cell.over{background:var(--accent-soft)}
+.load{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:10.5px;color:var(--muted);padding:0 2px 2px}
+.load .bar{flex:1;height:4px;background:var(--rule-2);border-radius:2px;overflow:hidden}
+.load .bar i{display:block;height:100%;background:var(--ok)}
+.load.warn .bar i{background:var(--warn)} .load.crit .bar i{background:var(--crit)}
+.load.crit{color:var(--crit);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:6px 8px;display:flex;flex-direction:column;gap:3px;cursor:grab;text-align:left;box-shadow:var(--shadow);position:relative}
+.card:hover{border-color:var(--accent)}
+.card.dragging{opacity:.45}
+.card .t{font-size:12.5px;line-height:1.3;font-weight:500}
+.card .m{display:flex;justify-content:space-between;align-items:center;gap:6px;font-family:var(--f-mono);font-size:10.5px;color:var(--muted)}
+.card.sev-crit{border-left:3px solid var(--crit)}
+.card.sev-warn{border-left:3px solid var(--warn)}
+.card.st-ferdig .t{text-decoration:line-through;color:var(--muted)}
+.card .flags{display:flex;gap:3px;align-items:center}
+.st{font-size:10.5px;font-family:var(--f-body)}
+.st-pågår{color:var(--accent)} .st-blokkert{color:var(--crit)} .st-ferdig{color:var(--ok)}
+.hint{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+
+/* layout */
+.split{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:4px}
+.panel-h{padding:12px 14px;border-bottom:1px solid var(--rule-2);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.panel-b{padding:12px 14px}
+.actlist{max-height:72vh;overflow:auto}
+.actrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 14px;border-bottom:1px solid var(--rule-2);cursor:pointer;background:none;border-left:3px solid transparent;width:100%;text-align:left;border-top:0;border-right:0}
+.actrow:hover{background:var(--surface-2)}
+.actrow[aria-selected="true"]{background:var(--accent-soft);border-left-color:var(--accent)}
+.actrow .n{font-weight:500;font-size:13px;line-height:1.3}
+.actrow .sub{grid-column:1/-1;display:flex;gap:10px;align-items:center}
+.cov{height:5px;background:var(--rule-2);border-radius:3px;overflow:hidden;flex:1;min-width:50px}
+.cov i{display:block;height:100%;background:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:4px 10px;font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+input.search,.f input,.f select,.f textarea,select.inline,input.inline{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:6px 8px}
+input.search{width:100%}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px 18px;margin:12px 0}
+.facts div span{display:block}
+.facts .v{font-family:var(--f-mono);font-size:13px;margin-top:2px}
+.bigcov{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+.bigcov .cov{height:10px}
+table{border-collapse:collapse;width:100%}
+.tbl-wrap{overflow-x:auto}
+th{font-family:var(--f-disp);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--rule-2);vertical-align:middle}
+td.r,th.r{text-align:right}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+select.inline,input.inline{padding:3px 6px;font-size:12.5px}
+input.inline.h{width:64px;text-align:right}
+.btn{border:1px solid var(--rule);background:var(--surface);border-radius:3px;padding:6px 12px;font-weight:500;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--crit);border-color:var(--crit)}
+.btn.small{padding:3px 8px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.issues{display:flex;flex-direction:column;gap:4px;margin:4px 0}
+.issue{display:flex;gap:8px;align-items:baseline;font-size:12.5px}
+.issue .dot{transform:translateY(1px)}
+
+/* leadership */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:12px 14px}
+.kpi .v{font-family:var(--f-disp);font-weight:600;font-size:30px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:16px;color:var(--muted);font-weight:500}
+.kpi .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.kpi.crit .v{color:var(--crit)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px;align-items:start}
+.heat td.c{text-align:center;font-family:var(--f-mono);font-size:12px;padding:8px 4px}
+.heat td.c.ok{background:var(--ok-bg);color:var(--ok)}
+.heat td.c.warn{background:var(--warn-bg);color:var(--warn)}
+.heat td.c.crit{background:var(--crit-bg);color:var(--crit);font-weight:600}
+.heat td.c.low{color:var(--faint)}
+.sec{margin-top:16px}
+
+/* team */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--rule);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;display:inline-flex;gap:7px;align-items:center}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--tc)}
+.chip[aria-pressed="true"]{border-color:var(--tc);box-shadow:inset 0 0 0 1px var(--tc);font-weight:600}
+.teamcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-bottom:16px}
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-bottom:1px solid var(--rule-2)}
+.li:last-child{border-bottom:0}
+.li .t{font-size:13px;font-weight:500;cursor:pointer}
+.li .t:hover{color:var(--accent)}
+.li .sub{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);font-size:13px;padding:8px 0}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,16,18,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:21;display:flex;flex-direction:column;border-left:1px solid var(--rule);box-shadow:-8px 0 24px rgba(0,0,0,.12);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer .dh{padding:14px 18px;border-bottom:1px solid var(--rule-2);display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.drawer .db{padding:14px 18px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:12px}
+.drawer .df{padding:12px 18px;border-top:1px solid var(--rule-2);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:12px;font-weight:500;color:var(--muted)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.deps{max-height:180px;overflow:auto;border:1px solid var(--rule);border-radius:3px;padding:4px 8px}
+.deps label{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;padding:3px 0;color:var(--ink);font-weight:400}
+.x{background:none;border:0;font-size:22px;line-height:1;color:var(--muted);padding:0 4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:4px;font-size:13px;z-index:30;max-width:calc(100% - 32px)}
+textarea.csv{width:100%;min-height:140px;font-family:var(--f-mono);font-size:12px;background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:8px}
+.captbl input{width:62px;text-align:right;padding:3px 6px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);font-family:var(--f-mono);font-size:12px}
+code{font-family:var(--f-mono);font-size:12px;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+[hidden]{display:none!important}
+body{margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="lbl" id="projLbl">Slagplan mot Safran</div>
+      <h1 id="projName">Laster …</h1>
+      <div class="pi-meta"><span class="pi-tag" id="piTag">PI</span><span class="mono muted" id="piDates"></span><span class="mode" id="mode">Kobler til …</span></div>
+    </div>
+    <nav class="tabs" aria-label="Visninger">
+      <button data-view="tavle">Programtavle</button>
+      <button data-view="nedbrytning">Nedbrytning</button>
+      <button data-view="ledelse">Ledelse</button>
+      <button data-view="team">Mitt team</button>
+      <button data-view="oppsett">Oppsett og import</button>
+    </nav>
+  </header>
+  <main id="main"></main>
+</div>
+<div id="overlay"></div>
+<div id="toastHost"></div>
+
+<script>
+const DEMO = {"cfg": {"project": "Aurora A – ny gasskompresjonsmodul", "pi": "PI 26.4", "start": "2026-10-05", "sprints": 6, "ipSprint": true, "maxHours": 60, "teams": [{"id": "PRO", "name": "Prosess"}, {"id": "PIP", "name": "Rør og mekanisk"}, {"id": "STR", "name": "Struktur"}, {"id": "EI", "name": "Elektro og instrument"}, {"id": "INN", "name": "Innkjøp"}, {"id": "OFF", "name": "Offshore og arbeidspakker"}], "capacity": {"PRO": [240, 240, 240, 240, 240, 120], "PIP": [320, 320, 320, 320, 320, 160], "STR": [240, 240, 240, 240, 240, 120], "EI": [320, 320, 320, 320, 320, 160], "INN": [160, 160, 160, 160, 160, 80], "OFF": [240, 240, 240, 240, 240, 120]}}, "activities": [{"id": "AUR-E-1100", "name": "Prosessdesign: oppdatert varme- og massebalanse", "wbs": "2.1.1", "team": "PRO", "start": "2026-09-14", "finish": "2026-10-16", "float": 5, "hours": 110, "preds": [], "milestone": false}, {"id": "AUR-E-1120", "name": "P&ID-er rev. B (IFR)", "wbs": "2.1.2", "team": "PRO", "start": "2026-10-05", "finish": "2026-10-30", "float": 3, "hours": 220, "preds": ["AUR-E-1100"], "milestone": false}, {"id": "AUR-E-1140", "name": "HAZOP og oppfølging", "wbs": "2.1.3", "team": "PRO", "start": "2026-11-02", "finish": "2026-11-20", "float": 0, "hours": 160, "preds": ["AUR-E-1120"], "milestone": false}, {"id": "AUR-E-1160", "name": "P&ID-er rev. C (IFC)", "wbs": "2.1.4", "team": "PRO", "start": "2026-11-23", "finish": "2026-12-11", "float": 2, "hours": 140, "preds": ["AUR-E-1140"], "milestone": false}, {"id": "AUR-E-2100", "name": "Rørlayout og 3D-modell 60 %", "wbs": "2.2.1", "team": "PIP", "start": "2026-10-05", "finish": "2026-11-06", "float": 5, "hours": 300, "preds": ["AUR-E-1120"], "milestone": false}, {"id": "AUR-E-2120", "name": "Isometrier IFC, pakke 1 (tie-ins)", "wbs": "2.2.2", "team": "PIP", "start": "2026-11-09", "finish": "2026-12-04", "float": 0, "hours": 340, "preds": ["AUR-E-2100", "AUR-E-1140"], "milestone": false}, {"id": "AUR-E-2140", "name": "Materialopptak (MTO) rør, pakke 1", "wbs": "2.2.3", "team": "PIP", "start": "2026-11-16", "finish": "2026-12-04", "float": 4, "hours": 80, "preds": ["AUR-E-2120"], "milestone": false}, {"id": "AUR-E-3100", "name": "Strukturberegning, nytt modulfundament", "wbs": "2.3.1", "team": "STR", "start": "2026-10-05", "finish": "2026-11-13", "float": 8, "hours": 300, "preds": [], "milestone": false}, {"id": "AUR-E-3120", "name": "Strukturtegninger IFC, fundament", "wbs": "2.3.2", "team": "STR", "start": "2026-11-16", "finish": "2026-12-11", "float": 5, "hours": 130, "preds": ["AUR-E-3100"], "milestone": false}, {"id": "AUR-E-4100", "name": "Instrumentindeks og datablader", "wbs": "2.4.1", "team": "EI", "start": "2026-10-12", "finish": "2026-11-13", "float": 5, "hours": 220, "preds": ["AUR-E-1120"], "milestone": false}, {"id": "AUR-E-4120", "name": "Kabelplan og kabelliste", "wbs": "2.4.2", "team": "EI", "start": "2026-11-02", "finish": "2026-12-04", "float": 3, "hours": 260, "preds": ["AUR-E-4100"], "milestone": false}, {"id": "AUR-E-4140", "name": "SAS og F&G: funksjonsbeskrivelse og I/O", "wbs": "2.4.3", "team": "EI", "start": "2026-11-16", "finish": "2026-12-18", "float": 10, "hours": 140, "preds": [], "milestone": false}, {"id": "AUR-P-5100", "name": "Anbudspakke kompressor (MR)", "wbs": "3.1.1", "team": "INN", "start": "2026-09-21", "finish": "2026-10-09", "float": 0, "hours": 30, "preds": ["AUR-E-1100"], "milestone": false}, {"id": "AUR-P-5120", "name": "Teknisk og kommersiell evaluering, kompressor", "wbs": "3.1.2", "team": "INN", "start": "2026-10-12", "finish": "2026-11-06", "float": 0, "hours": 110, "preds": ["AUR-P-5100"], "milestone": false}, {"id": "AUR-P-5140", "name": "Kontrakt og innkjøpsordre kompressor", "wbs": "3.1.3", "team": "INN", "start": "2026-11-09", "finish": "2026-11-20", "float": 0, "hours": 40, "preds": ["AUR-P-5120"], "milestone": false}, {"id": "AUR-P-5160", "name": "Leverandøroppfølging og VDR, kompressor", "wbs": "3.1.4", "team": "INN", "start": "2026-11-23", "finish": "2027-03-26", "float": 15, "hours": 60, "preds": ["AUR-P-5140"], "milestone": false}, {"id": "AUR-P-5200", "name": "Innkjøp bulk rør og ventiler, pakke 1", "wbs": "3.2.1", "team": "INN", "start": "2026-11-23", "finish": "2026-12-18", "float": 8, "hours": 50, "preds": ["AUR-E-2140"], "milestone": false}, {"id": "AUR-C-6100", "name": "Arbeidspakker tie-ins, forberedelse", "wbs": "4.1.1", "team": "OFF", "start": "2026-11-23", "finish": "2026-12-18", "float": 4, "hours": 210, "preds": ["AUR-E-2120"], "milestone": false}, {"id": "AUR-C-6200", "name": "Offshorebefaring og verifikasjon av laserskann", "wbs": "4.1.2", "team": "OFF", "start": "2026-10-19", "finish": "2026-10-30", "float": 10, "hours": 120, "preds": [], "milestone": false}, {"id": "AUR-C-6300", "name": "Prefabrikasjon spoler, pakke 1", "wbs": "4.2.1", "team": "OFF", "start": "2027-01-11", "finish": "2027-03-05", "float": 10, "hours": 900, "preds": ["AUR-P-5200"], "milestone": false}, {"id": "AUR-M-01", "name": "P&ID IFR utgitt til kunde", "wbs": "1.0", "team": "PRO", "start": "2026-10-30", "finish": "2026-10-30", "float": 0, "hours": 0, "preds": ["AUR-E-1120"], "milestone": true}, {"id": "AUR-M-02", "name": "HAZOP gjennomført og aksjoner lukket", "wbs": "1.0", "team": "PRO", "start": "2026-11-20", "finish": "2026-11-20", "float": 0, "hours": 0, "preds": ["AUR-E-1140"], "milestone": true}, {"id": "AUR-M-03", "name": "Kompressor-PO tildelt", "wbs": "1.0", "team": "INN", "start": "2026-11-20", "finish": "2026-11-20", "float": 0, "hours": 0, "preds": ["AUR-P-5140"], "milestone": true}, {"id": "AUR-M-04", "name": "IFC tie-in-pakke utgitt", "wbs": "1.0", "team": "PIP", "start": "2026-12-04", "finish": "2026-12-04", "float": 0, "hours": 0, "preds": ["AUR-E-2120"], "milestone": true}, {"id": "AUR-M-05", "name": "Arbeidspakker klare for offshoreplanlegging", "wbs": "1.0", "team": "OFF", "start": "2026-12-18", "finish": "2026-12-18", "float": 0, "hours": 0, "preds": ["AUR-C-6100"], "milestone": true}], "items": [{"id": "i01", "act": "AUR-E-1100", "title": "Oppdatert HYSYS-modell, kompresjonstog", "team": "PRO", "sprint": 1, "hours": 40, "status": "pågår", "deps": [], "type": "Modell", "dod": ""}, {"id": "i02", "act": "AUR-E-1100", "title": "Varme- og massebalanse rev. 2, verifisert", "team": "PRO", "sprint": 1, "hours": 32, "status": "ikke startet", "deps": ["i01"], "type": "Beregning", "dod": ""}, {"id": "i03", "act": "AUR-E-1100", "title": "Prosessdatablader kompressor og scrubber", "team": "PRO", "sprint": 1, "hours": 36, "status": "ikke startet", "deps": ["i01"], "type": "Dokument", "dod": ""}, {"id": "i04", "act": "AUR-E-1120", "title": "P&ID 001–004 kompresjonstog, rev. B", "team": "PRO", "sprint": 1, "hours": 48, "status": "ikke startet", "deps": ["i02"], "type": "Dokument", "dod": ""}, {"id": "i05", "act": "AUR-E-1120", "title": "P&ID 005–008 hjelpesystemer, rev. B", "team": "PRO", "sprint": 2, "hours": 48, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i06", "act": "AUR-E-1120", "title": "Linjeliste rev. B", "team": "PRO", "sprint": 2, "hours": 30, "status": "ikke startet", "deps": ["i04"], "type": "Liste", "dod": ""}, {"id": "i07", "act": "AUR-E-1120", "title": "Ventil- og instrumentoversikt fra P&ID", "team": "PRO", "sprint": 2, "hours": 24, "status": "ikke startet", "deps": ["i04"], "type": "Liste", "dod": ""}, {"id": "i08", "act": "AUR-E-1120", "title": "Kommentarrunde med kunde, P&ID IFR", "team": "PRO", "sprint": 3, "hours": 32, "status": "ikke startet", "deps": ["i05"], "type": "Møte", "dod": ""}, {"id": "i09", "act": "AUR-E-1140", "title": "HAZOP-forberedelse: noder og mandat", "team": "PRO", "sprint": 2, "hours": 24, "status": "ikke startet", "deps": ["i05"], "type": "Dokument", "dod": ""}, {"id": "i10", "act": "AUR-E-1140", "title": "HAZOP-sesjoner (4 dager)", "team": "PRO", "sprint": 3, "hours": 64, "status": "ikke startet", "deps": ["i09", "i07"], "type": "Møte", "dod": ""}, {"id": "i11", "act": "AUR-E-1140", "title": "HAZOP-aksjoner lukket (prosess)", "team": "PRO", "sprint": 3, "hours": 40, "status": "ikke startet", "deps": ["i10"], "type": "Liste", "dod": ""}, {"id": "i12", "act": "AUR-E-1160", "title": "Innarbeide HAZOP-aksjoner i P&ID", "team": "PRO", "sprint": 4, "hours": 48, "status": "ikke startet", "deps": ["i11"], "type": "Dokument", "dod": ""}, {"id": "i13", "act": "AUR-E-1160", "title": "P&ID rev. C (IFC) utgitt", "team": "PRO", "sprint": 5, "hours": 40, "status": "ikke startet", "deps": ["i12"], "type": "Dokument", "dod": "Signert av disiplinleder, utgitt i dokumentsystemet med status IFC"}, {"id": "i14", "act": "AUR-E-1160", "title": "Linjeliste IFC", "team": "PRO", "sprint": 5, "hours": 24, "status": "ikke startet", "deps": ["i13"], "type": "Liste", "dod": ""}, {"id": "i15", "act": "AUR-E-2100", "title": "Tie-in-oversikt og tie-in-skisser", "team": "PIP", "sprint": 1, "hours": 40, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i16", "act": "AUR-E-2100", "title": "Utstyrsplassering og modullayout i 3D", "team": "PIP", "sprint": 1, "hours": 56, "status": "ikke startet", "deps": [], "type": "Modell", "dod": ""}, {"id": "i17", "act": "AUR-E-2100", "title": "Rørruting kompresjonstog i 3D", "team": "PIP", "sprint": 2, "hours": 60, "status": "ikke startet", "deps": ["i16", "i04"], "type": "Modell", "dod": ""}, {"id": "i18", "act": "AUR-E-2100", "title": "Rørruting hjelpesystemer i 3D", "team": "PIP", "sprint": 2, "hours": 56, "status": "ikke startet", "deps": ["i05"], "type": "Modell", "dod": ""}, {"id": "i19", "act": "AUR-E-2100", "title": "Rørstressanalyse, kritiske linjer", "team": "PIP", "sprint": 2, "hours": 48, "status": "ikke startet", "deps": ["i17"], "type": "Beregning", "dod": ""}, {"id": "i20", "act": "AUR-E-2100", "title": "60 %-modellreview med kunde", "team": "PIP", "sprint": 2, "hours": 24, "status": "ikke startet", "deps": ["i17", "i18"], "type": "Møte", "dod": ""}, {"id": "i21", "act": "AUR-E-2120", "title": "Isometrier tie-ins T01–T06", "team": "PIP", "sprint": 3, "hours": 56, "status": "ikke startet", "deps": ["i19", "i11"], "type": "Dokument", "dod": ""}, {"id": "i22", "act": "AUR-E-2120", "title": "Isometrier tie-ins T07–T12", "team": "PIP", "sprint": 4, "hours": 56, "status": "ikke startet", "deps": ["i21"], "type": "Dokument", "dod": ""}, {"id": "i23", "act": "AUR-E-2120", "title": "Isometrier kompresjonstog, del 1", "team": "PIP", "sprint": 4, "hours": 60, "status": "ikke startet", "deps": ["i19"], "type": "Dokument", "dod": ""}, {"id": "i24", "act": "AUR-E-2120", "title": "Isometrier kompresjonstog, del 2", "team": "PIP", "sprint": 4, "hours": 60, "status": "ikke startet", "deps": ["i23"], "type": "Dokument", "dod": ""}, {"id": "i25", "act": "AUR-E-2120", "title": "Isometrier hjelpesystemer", "team": "PIP", "sprint": 5, "hours": 52, "status": "ikke startet", "deps": ["i18"], "type": "Dokument", "dod": ""}, {"id": "i26", "act": "AUR-E-2120", "title": "Rørstøtter og spesialstøtter", "team": "PIP", "sprint": 4, "hours": 48, "status": "ikke startet", "deps": ["i19"], "type": "Dokument", "dod": ""}, {"id": "i27", "act": "AUR-E-2140", "title": "MTO rør, pakke 1", "team": "PIP", "sprint": 4, "hours": 40, "status": "ikke startet", "deps": ["i22"], "type": "Liste", "dod": ""}, {"id": "i28", "act": "AUR-E-2140", "title": "MTO ventiler og spesialdeler", "team": "PIP", "sprint": 4, "hours": 32, "status": "ikke startet", "deps": ["i23"], "type": "Liste", "dod": ""}, {"id": "i29", "act": "AUR-E-3100", "title": "Lastgrunnlag fra leverandør og prosess", "team": "STR", "sprint": 1, "hours": 32, "status": "ikke startet", "deps": ["i03"], "type": "Dokument", "dod": ""}, {"id": "i30", "act": "AUR-E-3100", "title": "Global analyse, modulfundament", "team": "STR", "sprint": 1, "hours": 56, "status": "ikke startet", "deps": [], "type": "Beregning", "dod": ""}, {"id": "i31", "act": "AUR-E-3100", "title": "Lokale analyser og knutepunkter", "team": "STR", "sprint": 2, "hours": 60, "status": "ikke startet", "deps": ["i30"], "type": "Beregning", "dod": ""}, {"id": "i32", "act": "AUR-E-3100", "title": "Beregningsrapport, uavhengig kontroll", "team": "STR", "sprint": 3, "hours": 48, "status": "ikke startet", "deps": ["i31"], "type": "Beregning", "dod": ""}, {"id": "i33", "act": "AUR-E-3100", "title": "Fundament for kompressorskid", "team": "STR", "sprint": 2, "hours": 120, "status": "ikke startet", "deps": ["i29"], "type": "Beregning", "dod": ""}, {"id": "i34", "act": "AUR-E-3120", "title": "Fundamenttegninger IFC", "team": "STR", "sprint": 4, "hours": 56, "status": "ikke startet", "deps": ["i32"], "type": "Dokument", "dod": ""}, {"id": "i35", "act": "AUR-E-3120", "title": "Rekkverk, gangbaner og adkomst", "team": "STR", "sprint": 5, "hours": 40, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i36", "act": "AUR-E-3120", "title": "Materialliste stål", "team": "STR", "sprint": 5, "hours": 24, "status": "ikke startet", "deps": ["i34"], "type": "Liste", "dod": ""}, {"id": "i37", "act": "AUR-E-4100", "title": "Instrumentindeks fra P&ID rev. B", "team": "EI", "sprint": 2, "hours": 40, "status": "ikke startet", "deps": ["i07"], "type": "Liste", "dod": ""}, {"id": "i38", "act": "AUR-E-4100", "title": "Datablader trykk- og temperaturinstrumenter", "team": "EI", "sprint": 3, "hours": 48, "status": "ikke startet", "deps": ["i37"], "type": "Dokument", "dod": ""}, {"id": "i39", "act": "AUR-E-4100", "title": "Datablader ventiler og mengdemålere", "team": "EI", "sprint": 3, "hours": 56, "status": "ikke startet", "deps": ["i37"], "type": "Dokument", "dod": ""}, {"id": "i40", "act": "AUR-E-4100", "title": "Sløyfediagrammer instrument", "team": "EI", "sprint": 4, "hours": 60, "status": "ikke startet", "deps": ["i38"], "type": "Dokument", "dod": ""}, {"id": "i41", "act": "AUR-E-4120", "title": "Lastliste elektro og transformatorbelastning", "team": "EI", "sprint": 3, "hours": 32, "status": "ikke startet", "deps": ["i03"], "type": "Beregning", "dod": ""}, {"id": "i42", "act": "AUR-E-4120", "title": "Kabelruting i 3D", "team": "EI", "sprint": 4, "hours": 56, "status": "ikke startet", "deps": ["i17"], "type": "Modell", "dod": ""}, {"id": "i43", "act": "AUR-E-4120", "title": "Kabelliste og kabelplan elektro IFC", "team": "EI", "sprint": 4, "hours": 60, "status": "ikke startet", "deps": ["i42"], "type": "Liste", "dod": ""}, {"id": "i44", "act": "AUR-E-4120", "title": "Kabelplan instrument", "team": "EI", "sprint": 4, "hours": 56, "status": "ikke startet", "deps": ["i37"], "type": "Dokument", "dod": ""}, {"id": "i45", "act": "AUR-E-4120", "title": "Koblingsskjema lokalt kontrollpanel", "team": "EI", "sprint": 4, "hours": 48, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i46", "act": "AUR-E-4140", "title": "Funksjonsbeskrivelse SAS, kompressorstyring", "team": "EI", "sprint": 4, "hours": 48, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i47", "act": "AUR-E-4140", "title": "F&G årsak–virkning-matrise oppdatert", "team": "EI", "sprint": 5, "hours": 40, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}, {"id": "i48", "act": "AUR-E-4140", "title": "I/O-liste til systemleverandør", "team": "EI", "sprint": 5, "hours": 32, "status": "ikke startet", "deps": ["i46"], "type": "Liste", "dod": ""}, {"id": "i49", "act": "AUR-P-5100", "title": "Anbudspakke kompressor sendt ut", "team": "INN", "sprint": 1, "hours": 24, "status": "pågår", "deps": ["i03"], "type": "Innkjøp", "dod": ""}, {"id": "i50", "act": "AUR-P-5120", "title": "Avklaringsmøter med leverandører", "team": "INN", "sprint": 2, "hours": 32, "status": "ikke startet", "deps": ["i49"], "type": "Møte", "dod": ""}, {"id": "i51", "act": "AUR-P-5120", "title": "Teknisk evaluering (prosess, mek., E&I)", "team": "INN", "sprint": 2, "hours": 40, "status": "ikke startet", "deps": ["i49"], "type": "Innkjøp", "dod": ""}, {"id": "i52", "act": "AUR-P-5120", "title": "Kommersiell evaluering og anbefaling", "team": "INN", "sprint": 2, "hours": 32, "status": "ikke startet", "deps": ["i51"], "type": "Innkjøp", "dod": ""}, {"id": "i53", "act": "AUR-P-5140", "title": "Kontraktsforhandling og PO-tildeling", "team": "INN", "sprint": 3, "hours": 40, "status": "ikke startet", "deps": ["i52"], "type": "Innkjøp", "dod": ""}, {"id": "i54", "act": "AUR-P-5200", "title": "Forespørsel bulk rør og ventiler", "team": "INN", "sprint": 5, "hours": 24, "status": "ikke startet", "deps": ["i27", "i28"], "type": "Innkjøp", "dod": ""}, {"id": "i55", "act": "AUR-P-5200", "title": "PO bulk, pakke 1", "team": "INN", "sprint": 6, "hours": 24, "status": "ikke startet", "deps": ["i54"], "type": "Innkjøp", "dod": ""}, {"id": "i56", "act": "AUR-P-5160", "title": "Oppstartsmøte leverandør og VDR-liste", "team": "INN", "sprint": 4, "hours": 24, "status": "ikke startet", "deps": ["i53"], "type": "Møte", "dod": ""}, {"id": "i57", "act": "AUR-P-5160", "title": "Første VDR-gjennomgang", "team": "INN", "sprint": 6, "hours": 32, "status": "ikke startet", "deps": ["i56"], "type": "Dokument", "dod": ""}, {"id": "i58", "act": "AUR-C-6100", "title": "Mal for arbeidspakker og grensesnitt mot drift", "team": "OFF", "sprint": 4, "hours": 32, "status": "ikke startet", "deps": [], "type": "Arbeidspakke", "dod": ""}, {"id": "i59", "act": "AUR-C-6100", "title": "Arbeidspakker tie-ins T01–T06", "team": "OFF", "sprint": 5, "hours": 48, "status": "ikke startet", "deps": ["i21", "i58"], "type": "Arbeidspakke", "dod": ""}, {"id": "i60", "act": "AUR-C-6100", "title": "Arbeidspakker tie-ins T07–T12", "team": "OFF", "sprint": 5, "hours": 48, "status": "ikke startet", "deps": ["i22", "i58"], "type": "Arbeidspakke", "dod": ""}, {"id": "i61", "act": "AUR-C-6100", "title": "Isolasjons- og avstengningsplaner", "team": "OFF", "sprint": 5, "hours": 40, "status": "ikke startet", "deps": ["i59"], "type": "Arbeidspakke", "dod": ""}, {"id": "i62", "act": "AUR-C-6100", "title": "Materialkontroll og løfteplaner", "team": "OFF", "sprint": null, "hours": 40, "status": "ikke startet", "deps": [], "type": "Arbeidspakke", "dod": ""}, {"id": "i63", "act": "AUR-E-1160", "title": "Brannteknisk vurdering, ny modul", "team": "PRO", "sprint": null, "hours": 32, "status": "ikke startet", "deps": [], "type": "Dokument", "dod": ""}]};
+const STATUSES=["ikke startet","pågår","blokkert","ferdig"];
+const TYPES=["Dokument","Modell","Liste","Beregning","Innkjøp","Møte","Arbeidspakke"];
+const S={cfg:null,acts:{},items:{},mode:"loading",canWrite:true,db:null,dl:null,
+  view:"tavle",selAct:null,actFilter:"pi",actSearch:"",team:null,editing:null,confirmDel:false,importPreview:null,confirmReset:false};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+try{const v=localStorage.getItem("pi-view");if(v)S.view=v;const t=localStorage.getItem("pi-team");if(t)S.team=t;}catch(e){}
+const hv=(location.hash||"").slice(1);if(["tavle","nedbrytning","ledelse","team","oppsett"].includes(hv))S.view=hv;
+
+/* ---------- dates ---------- */
+const D=s=>{const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)};
+const DAY=864e5;
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const MON=["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
+const fd=s=>{if(!s)return"–";const d=new Date(typeof s==="number"?s:D(s));return d.getUTCDate()+". "+MON[d.getUTCMonth()]+(d.getUTCFullYear()!==new Date(D(S.cfg.start)).getUTCFullYear()?" "+String(d.getUTCFullYear()).slice(2):"")};
+const sStart=i=>D(S.cfg.start)+(i-1)*14*DAY;
+const sEnd=i=>sStart(i)+11*DAY;
+const piEnd=()=>sEnd(S.cfg.sprints);
+const sprints=()=>Array.from({length:S.cfg.sprints},(_,i)=>i+1);
+const isIP=i=>S.cfg.ipSprint&&i===S.cfg.sprints;
+const sName=i=>i?("S"+i+(isIP(i)?" · IP":"")):"Ikke planlagt";
+const todayT=()=>{const n=new Date();return Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())};
+function curSprint(){const t=todayT();for(const i of sprints()){if(t<=sEnd(i)+2*DAY)return i}return null}
+const team=id=>S.cfg.teams.find(t=>t.id===id)||{id,name:id};
+const tc=id=>`--tc:var(--t-${id},var(--muted))`;
+const teamTag=id=>`<span class="team" style="${tc(id)}"><i></i>${esc(team(id).name)}</span>`;
+
+/* ---------- analysis ---------- */
+function analyse(){
+  const cfg=S.cfg,items=Object.values(S.items),acts=S.acts;
+  const ii={},load={},actS={};
+  for(const t of cfg.teams){load[t.id]={};for(const i of sprints())load[t.id][i]=0}
+  for(const a of Object.values(acts)){actS[a.id]={items:[],hours:0,planned:0,unplanned:0,forecast:null,issues:[]}}
+  for(const it of items){
+    const L=ii[it.id]=[];const a=acts[it.act];
+    if(it.sprint&&load[it.team])load[it.team][it.sprint]+=+it.hours||0;
+    if(!a){L.push({sev:"crit",k:"orphan",msg:`Safran-aktivitet ${it.act} finnes ikke i siste import`})}
+    else{
+      const s=actS[a.id];s.items.push(it);s.hours+=+it.hours||0;
+      if(it.sprint){s.planned+=+it.hours||0;const e=sEnd(it.sprint);s.forecast=Math.max(s.forecast||0,e);
+        const late=Math.round((e-D(a.finish))/DAY);
+        if(late>(+a.float||0))L.push({sev:"crit",k:"late",msg:`Ferdig ${fd(e)}, ${late} d etter Safran-slutt ${fd(a.finish)} (flyt ${a.float} d)`});
+        else if(late>0)L.push({sev:"warn",k:"float",msg:`Bruker ${late} av ${a.float} d flyt mot Safran-slutt ${fd(a.finish)}`});
+      }else s.unplanned++;
+    }
+    if((+it.hours||0)>cfg.maxHours)L.push({sev:"warn",k:"size",msg:`${it.hours} t er over grensen på ${cfg.maxHours} t. Del opp leveransen`});
+    for(const d of it.deps||[]){const p=S.items[d];if(!p)continue;
+      if(it.sprint&&!p.sprint)L.push({sev:"crit",k:"dep",msg:`Venter på «${p.title}» (${team(p.team).name}), som ikke er planlagt`});
+      else if(it.sprint&&p.sprint>it.sprint)L.push({sev:"crit",k:"dep",msg:`Venter på «${p.title}» i ${sName(p.sprint)}, som er senere enn denne`});
+      else if(it.sprint&&p.sprint===it.sprint&&p.team!==it.team)L.push({sev:"warn",k:"dep",msg:`Venter på «${p.title}» (${team(p.team).name}) i samme sprint`});
+    }
+    if(it.status==="blokkert")L.push({sev:"crit",k:"blocked",msg:"Status: blokkert"});
+  }
+  const ps=D(cfg.start),pe=piEnd();
+  for(const a of Object.values(acts)){const s=actS[a.id];
+    s.inPI=!a.milestone&&D(a.start)<=pe&&D(a.finish)>=ps;s.beyond=D(a.finish)>pe;
+    s.cov=a.hours?s.hours/a.hours:null;
+    if(a.milestone)continue;
+    if(s.inPI&&!s.items.length)s.issues.push({sev:"crit",k:"nobreak",msg:"Ikke brutt ned. Ingen leveranser er knyttet til aktiviteten"});
+    else if(s.inPI&&!s.beyond&&s.cov!==null&&s.cov<.8)s.issues.push({sev:"warn",k:"cov",msg:`Nedbrytningen dekker ${Math.round(s.cov*100)} % av gjenstående timeverk i Safran`});
+    else if(s.cov!==null&&s.cov>1.2)s.issues.push({sev:"warn",k:"cov",msg:`Nedbrytningen er ${Math.round(s.cov*100)} % av Safran-timeverk. Estimatene er høyere enn planen`});
+    if(s.unplanned&&s.inPI&&!s.beyond)s.issues.push({sev:"warn",k:"unpl",msg:`${s.unplanned} leveranse(r) er ikke lagt i sprint`});
+    if(s.forecast&&!s.unplanned){const late=Math.round((s.forecast-D(a.finish))/DAY);
+      if(late>(+a.float||0))s.issues.push({sev:"crit",k:"late",msg:`Prognose ${fd(s.forecast)}, ${late} d etter Safran (flyt ${a.float} d)`});
+      else if(late>0)s.issues.push({sev:"warn",k:"float",msg:`Prognose ${fd(s.forecast)} bruker ${late} d av flyten`});}
+  }
+  const ms=Object.values(acts).filter(a=>a.milestone).sort((a,b)=>D(a.finish)-D(b.finish)).map(m=>{
+    let fc=0,state="ok",note="";
+    for(const p of m.preds||[]){const s=actS[p];if(!s)continue;
+      if(!s.items.length){state="crit";note=`${p} er ikke brutt ned`;continue}
+      if(s.unplanned){if(state!=="crit"){state="warn";note=`${p} har uplanlagte leveranser`}}
+      if(s.forecast)fc=Math.max(fc,s.forecast)}
+    const late=fc?Math.round((fc-D(m.finish))/DAY):null;
+    if(late!==null&&late>0){state="crit";note=note||`${late} d etter Safran`}
+    return {m,fc,late,state,note}});
+  const loadIssues=[];
+  for(const t of cfg.teams)for(const i of sprints()){const c=(cfg.capacity[t.id]||[])[i-1]||0,l=load[t.id][i];
+    if(c&&l>c)loadIssues.push({team:t.id,sprint:i,l,c})}
+  return {ii,load,actS,ms,loadIssues};
+}
+const worst=L=>L.some(x=>x.sev==="crit")?"crit":L.some(x=>x.sev==="warn")?"warn":null;
+const loadCls=(l,c)=>!c?"":l>c?"crit":l>c*.9?"warn":"ok";
+
+/* ---------- render ---------- */
+function render(){
+  if(!S.cfg){$("#main").innerHTML='<p class="muted">Laster planen …</p>';return}
+  const A=analyse();S._A=A;
+  $("#projName").textContent=S.cfg.project;
+  $("#piTag").textContent=S.cfg.pi;
+  $("#piDates").textContent=`${fd(S.cfg.start)} – ${fd(piEnd())} · ${S.cfg.sprints} sprinter à 2 uker`;
+  const m=$("#mode");m.className="mode "+(S.saveOk===false?"demo":"live");
+  m.textContent=S.saveOk===false?"Lagres ikke – eksporter planen":"Lagres lokalt i denne nettleseren";
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.view===S.view?"page":"false"));
+  const v={tavle:vBoard,nedbrytning:vBreak,ledelse:vLead,team:vTeam,oppsett:vSetup}[S.view]||vBoard;
+  const sx=document.querySelector(".board-scroll")?.scrollLeft;
+  const al=document.querySelector(".actlist")?.scrollTop;
+  $("#main").innerHTML=v(A);
+  if(sx&&document.querySelector(".board-scroll"))document.querySelector(".board-scroll").scrollLeft=sx;
+  if(al&&document.querySelector(".actlist"))document.querySelector(".actlist").scrollTop=al;
+  renderDrawer(A);
+}
+function ruler(){const c=curSprint();return `<div class="ruler-wrap"><div class="ruler" style="--n:${S.cfg.sprints}">${sprints().map(i=>`<div class="${i===c?"now":""} ${isIP(i)?"ip":""}"><b>${sName(i)}</b><span>${fd(sStart(i))} – ${fd(sEnd(i))}</span></div>`).join("")}</div></div>`}
+const flag=st=>`<svg width="11" height="13" viewBox="0 0 11 13" aria-hidden="true"><path d="M1.5 0.5v12" stroke="currentColor" stroke-width="1.4"/><path d="M2 1h8l-2 3 2 3H2z" fill="var(--${st})"/></svg>`;
+
+function card(it,A){const L=A.ii[it.id]||[],w=worst(L);
+  return `<div class="card ${w?"sev-"+w:""} st-${it.status.replace(" ","-")}" draggable="${S.canWrite}" data-item="${it.id}" tabindex="0" title="${esc(L.map(x=>x.msg).join("\n"))}">
+    <div class="t">${esc(it.title)}</div>
+    <div class="m"><span>${esc(it.act)}</span><span class="flags">${it.status!=="ikke startet"?`<span class="st st-${it.status}">${it.status}</span>`:""}<span>${it.hours} t</span>${w?`<span class="dot ${w}"></span>`:""}</span></div></div>`}
+
+function vBoard(A){
+  const n=S.cfg.sprints,items=Object.values(S.items);
+  const msBy={};for(const x of A.ms){const t=D(x.m.finish);let s=sprints().find(i=>t<=sEnd(i)+2*DAY);(msBy[s||"after"]=msBy[s||"after"]||[]).push(x)}
+  let h=`<p class="hint">Dra leveranser mellom sprinter og team. Rød kant betyr konflikt med Safran-dato, avhengighet eller status. Gul betyr at flyten brukes, eller at leveransen er for stor for én sprint. Klikk på et kort for detaljer.</p>
+  <div class="board-scroll"><div class="board" style="--n:${n}">
+  <div class="h"><b>Team</b><span>kapasitet t/sprint</span></div><div class="h"><b>Ikke planlagt</b><span>backlog</span></div>
+  ${sprints().map(i=>`<div class="h"><b>${sName(i)}</b><span>${fd(sStart(i))} – ${fd(sEnd(i))}</span></div>`).join("")}
+  <div class="h" style="background:var(--surface-2)"><span class="lbl">Safran-milepæler</span></div><div class="ms"></div>
+  ${sprints().map(i=>`<div class="ms">${(msBy[i]||[]).map(x=>`<button class="msflag" data-openact="${x.m.id}" title="${esc(x.note)}">${flag(x.state)}<span><span class="mono">${fd(x.m.finish)}</span> ${esc(x.m.name)}</span></button>`).join("")}</div>`).join("")}`;
+  for(const t of S.cfg.teams){
+    const mine=items.filter(i=>i.team===t.id);
+    h+=`<div class="rowh" style="${tc(t.id)}"><b>${esc(t.name)}</b><span class="mono muted">${t.id} · ${mine.length} lev.</span></div>`;
+    const bl=mine.filter(i=>!i.sprint);
+    h+=`<div class="cell backlog" data-drop="1" data-team="${t.id}" data-sprint="0">${bl.map(i=>card(i,A)).join("")}</div>`;
+    for(const s of sprints()){const c=(S.cfg.capacity[t.id]||[])[s-1]||0,l=A.load[t.id][s],cls=loadCls(l,c);
+      h+=`<div class="cell" data-drop="1" data-team="${t.id}" data-sprint="${s}"><div class="load ${cls}" title="Belastning mot kapasitet"><span>${l}/${c} t</span><span class="bar"><i style="width:${c?Math.min(100,l/c*100):0}%"></i></span></div>${mine.filter(i=>i.sprint===s).sort((a,b)=>a.act.localeCompare(b.act)).map(i=>card(i,A)).join("")}</div>`}
+  }
+  return h+`</div></div>`;
+}
+
+function actRow(a,A){const s=A.actS[a.id],w=worst(s.issues.concat(s.items.flatMap(i=>A.ii[i.id]||[])));
+  return `<button class="actrow" data-selact="${a.id}" aria-selected="${S.selAct===a.id}">
+   <span class="n">${esc(a.name)}</span>${w?`<span class="dot ${w}" title="Har varsler"></span>`:"<span></span>"}
+   <span class="sub"><span class="mono muted">${a.id}</span>${teamTag(a.team)}</span>
+   <span class="sub"><span class="mono muted">${fd(a.start)} – ${fd(a.finish)}</span><span class="cov" title="Nedbrutt mot Safran-timeverk"><i style="width:${Math.min(100,(s.cov||0)*100)}%"></i></span><span class="mono muted">${s.cov===null?"–":Math.round(s.cov*100)+" %"}</span></span></button>`}
+
+function vBreak(A){
+  let acts=Object.values(S.acts).filter(a=>!a.milestone);
+  if(S.actFilter==="pi")acts=acts.filter(a=>A.actS[a.id].inPI);
+  if(S.actFilter==="issues")acts=acts.filter(a=>A.actS[a.id].issues.length||A.actS[a.id].items.some(i=>(A.ii[i.id]||[]).length));
+  const q=S.actSearch.trim().toLowerCase();if(q)acts=acts.filter(a=>(a.id+" "+a.name+" "+a.wbs).toLowerCase().includes(q));
+  acts.sort((a,b)=>a.wbs.localeCompare(b.wbs,undefined,{numeric:true}));
+  if(!S.selAct||!S.acts[S.selAct])S.selAct=acts[0]?.id||null;
+  const left=`<div class="panel"><div class="panel-h"><span class="lbl">Safran-aktiviteter</span>
+    <span class="seg" role="group" aria-label="Filter">${[["pi","I PI"],["issues","Med varsler"],["all","Alle"]].map(([k,l])=>`<button data-actfilter="${k}" aria-pressed="${S.actFilter===k}">${l}</button>`).join("")}</span>
+    <input class="search" id="actSearch" type="search" placeholder="Søk ID, navn eller WBS" value="${esc(S.actSearch)}"></div>
+    <div class="actlist">${acts.map(a=>actRow(a,A)).join("")||'<p class="empty" style="padding:14px">Ingen aktiviteter matcher.</p>'}</div></div>`;
+  return `<p class="hint">Velg en Safran-aktivitet og bryt den ned i leveranser som et team kan fullføre innen én sprint (maks ${S.cfg.maxHours} t). Verktøyet sammenligner sprintplasseringen med Safran-datoene og flyten.</p>${ruler()}<div class="split">${left}${S.selAct?actDetail(S.acts[S.selAct],A):'<div class="panel panel-b muted">Ingen aktivitet valgt.</div>'}</div>`;
+}
+function actDetail(a,A){const s=A.actS[a.id];
+  const preds=(a.preds||[]).map(p=>`<button class="btn small" data-selact="${p}">${esc(p)}</button>`).join(" ")||'<span class="muted">Ingen</span>';
+  const items=s.items.slice().sort((x,y)=>(x.sprint||99)-(y.sprint||99));
+  const ro=S.canWrite?"":"disabled";
+  return `<div class="panel"><div class="panel-h"><div><span class="mono muted">${a.id} · WBS ${esc(a.wbs)}</span><h2>${esc(a.name)}</h2></div>${teamTag(a.team)}</div>
+  <div class="panel-b">
+   <div class="facts">
+    <div><span class="lbl">Safran start</span><span class="v">${fd(a.start)}</span></div>
+    <div><span class="lbl">Safran slutt</span><span class="v">${fd(a.finish)}</span></div>
+    <div><span class="lbl">Total flyt</span><span class="v">${a.float} d</span></div>
+    <div><span class="lbl">Prognose fra sprinter</span><span class="v">${s.forecast?fd(s.forecast):"–"}${s.unplanned?" (ufullstendig)":""}</span></div>
+    <div><span class="lbl">Gjenstående timeverk</span><span class="v">${a.hours} t</span></div>
+    <div><span class="lbl">Forgjengere</span><span class="v">${preds}</span></div>
+   </div>
+   <div class="bigcov"><span class="lbl">Nedbrutt</span><span class="cov"><i style="width:${Math.min(100,(s.cov||0)*100)}%"></i></span><span class="mono">${s.hours} av ${a.hours} t${s.cov!==null?` · ${Math.round(s.cov*100)} %`:""}</span></div>
+   ${s.beyond?`<p class="hint">Aktiviteten går forbi PI-slutt (${fd(piEnd())}). Det som ikke er brutt ned nå, planlegges i neste PI.</p>`:""}
+   ${s.issues.length?`<div class="issues">${s.issues.map(x=>`<div class="issue"><span class="dot ${x.sev}"></span><span>${esc(x.msg)}</span></div>`).join("")}</div>`:""}
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Leveranse</th><th>Team</th><th>Sprint</th><th class="r">Timer</th><th>Status</th><th>Varsler</th></tr></thead><tbody>
+   ${items.map(it=>{const L=A.ii[it.id]||[];return `<tr><td><button class="btn small" style="border:0;padding:0;background:none;text-align:left;font-weight:500" data-edit="${it.id}">${esc(it.title)}</button><div class="mono muted">${esc(it.type||"")}</div></td>
+    <td><select class="inline" data-f="team" data-id="${it.id}" ${ro}>${S.cfg.teams.map(t=>`<option value="${t.id}" ${t.id===it.team?"selected":""}>${esc(t.name)}</option>`).join("")}</select></td>
+    <td><select class="inline" data-f="sprint" data-id="${it.id}" ${ro}><option value="0">Ikke planlagt</option>${sprints().map(i=>`<option value="${i}" ${i===it.sprint?"selected":""}>${sName(i)} · ${fd(sEnd(i))}</option>`).join("")}</select></td>
+    <td class="r"><input class="inline h" type="number" min="0" step="4" data-f="hours" data-id="${it.id}" value="${it.hours}" ${ro}></td>
+    <td><select class="inline" data-f="status" data-id="${it.id}" ${ro}>${STATUSES.map(x=>`<option ${x===it.status?"selected":""}>${x}</option>`).join("")}</select></td>
+    <td>${L.map(x=>`<span class="pill ${x.sev}" title="${esc(x.msg)}">${{late:"Etter Safran",float:"Bruker flyt",size:"For stor",dep:"Avhengighet",blocked:"Blokkert",orphan:"Mangler i Safran"}[x.k]}</span>`).join(" ")||'<span class="pill ok">OK</span>'}${(+it.hours>S.cfg.maxHours&&S.canWrite)?` <button class="btn small" data-split="${it.id}">Del i to</button>`:""}</td></tr>`}).join("")}
+   ${!items.length?`<tr><td colspan="6" class="empty" style="padding:12px 8px">Ingen leveranser ennå. Start med dataobjektene aktiviteten skal produsere: dokumenter, modeller, lister og beregninger.</td></tr>`:""}
+  </tbody></table></div>
+  <div class="panel-b row"><button class="btn primary" data-new="${a.id}" ${ro}>Ny leveranse</button><span class="muted" style="font-size:12.5px">Tips: Én leveranse = ett dataobjekt med en tydelig ferdig-definisjon, eid av ett team.</span></div></div>`;
+}
+
+function vLead(A){
+  const acts=Object.values(S.acts).filter(a=>A.actS[a.id].inPI);
+  const broken=acts.filter(a=>A.actS[a.id].items.length).length;
+  const items=Object.values(S.items);
+  const planned=items.filter(i=>i.sprint).length;
+  const allIss=items.flatMap(i=>(A.ii[i.id]||[]).map(x=>({...x,it:i})));
+  const safranC=allIss.filter(x=>x.k==="late").length, floatC=allIss.filter(x=>x.k==="float").length;
+  let cap=0,ld=0;for(const t of S.cfg.teams)for(const i of sprints()){cap+=(S.cfg.capacity[t.id]||[])[i-1]||0;ld+=A.load[t.id][i]}
+  const msLate=A.ms.filter(x=>x.state==="crit").length;
+  const kpi=(cls,l,v,s)=>`<div class="kpi ${cls}"><div class="lbl">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  let h=`<div class="kpis">
+   ${kpi(broken===acts.length?"ok":"warn","Aktiviteter brutt ned",`${broken}<small> / ${acts.length}</small>`,"Safran-aktiviteter som berører PI-en")}
+   ${kpi(msLate?"crit":"ok","Milepæler i fare",`${msLate}<small> / ${A.ms.length}</small>`,"Prognose etter Safran-dato eller ikke brutt ned")}
+   ${kpi(safranC?"crit":"ok","Leveranser etter Safran",`${safranC}`,`${floatC} til bruker flyt uten å gå over`)}
+   ${kpi(A.loadIssues.length?"crit":"ok","Overbookede team-sprinter",`${A.loadIssues.length}`,`Belastning ${ld} av ${cap} t (${Math.round(ld/cap*100)} %) i PI-en`)}
+  </div>
+  <div class="grid2">
+   <div class="panel"><div class="panel-h"><h3>Safran-milepæler mot sprintprognose</h3></div><div class="tbl-wrap"><table>
+    <thead><tr><th>Milepæl</th><th>Safran</th><th>Prognose</th><th class="r">Avvik</th><th>Status</th></tr></thead><tbody>
+    ${A.ms.map(x=>`<tr class="click" data-openact="${x.m.id}"><td><div style="font-weight:500">${esc(x.m.name)}</div><div class="mono muted">${x.m.id}</div></td><td class="mono">${fd(x.m.finish)}</td><td class="mono">${x.fc?fd(x.fc):"–"}</td><td class="r mono">${x.late===null?"–":(x.late>0?"+":"")+x.late+" d"}</td>
+    <td><span class="pill ${x.state}">${x.state==="ok"?"I rute":x.state==="warn"?"Ufullstendig":"I fare"}</span>${x.note?`<div class="muted" style="font-size:11.5px;margin-top:2px">${esc(x.note)}</div>`:""}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="hint" style="padding:0 14px 12px;margin:8px 0 0">Prognosen er sluttdatoen for den siste sprinten som inneholder forgjengeraktivitetenes leveranser. Sprintoppløsningen er to uker, så en milepæl midt i en sprint får opptil 9 dagers avvik på papiret.</p></div>
+   <div class="panel"><div class="panel-h"><h3>Kapasitet per team og sprint</h3><span class="muted" style="font-size:12px">belastning i % av kapasitet</span></div><div class="tbl-wrap"><table class="heat">
+    <thead><tr><th>Team</th>${sprints().map(i=>`<th class="r" style="text-align:center">${sName(i)}</th>`).join("")}</tr></thead><tbody>
+    ${S.cfg.teams.map(t=>`<tr><td>${teamTag(t.id)}</td>${sprints().map(i=>{const c=(S.cfg.capacity[t.id]||[])[i-1]||0,l=A.load[t.id][i],p=c?Math.round(l/c*100):0;const cls=!l?"low":loadCls(l,c)==="ok"&&p<50?"low":loadCls(l,c);return `<td class="c ${cls}" title="${l} av ${c} t">${l?p+" %":"–"}</td>`}).join("")}</tr>`).join("")}
+    </tbody></table></div>
+    <p class="hint" style="padding:0 14px 12px;margin:8px 0 0">Lav belastning tidlig og høy belastning sent er typisk for en nedbrytning som følger Safran-logikken. Sjekk om teamene kan trekke arbeid frem.</p></div>
+  </div>
+  <div class="panel sec"><div class="panel-h"><h3>Varsler</h3><span class="muted" style="font-size:12px">${allIss.length} på leveranser, ${Object.values(A.actS).reduce((n,s)=>n+s.issues.length,0)} på aktiviteter</span></div><div class="tbl-wrap"><table>
+   <thead><tr><th></th><th>Hva</th><th>Gjelder</th><th>Team</th><th>Sprint</th></tr></thead><tbody>
+   ${Object.values(S.acts).flatMap(a=>A.actS[a.id].issues.filter(x=>x.sev==="crit").map(x=>`<tr class="click" data-openact="${a.id}"><td><span class="dot crit"></span></td><td>${esc(x.msg)}</td><td><span class="mono">${a.id}</span> ${esc(a.name)}</td><td>${teamTag(a.team)}</td><td class="muted">–</td></tr>`)).join("")}
+   ${A.loadIssues.map(x=>`<tr><td><span class="dot crit"></span></td><td>Overbooket: ${x.l} t mot ${x.c} t kapasitet</td><td class="muted">Teamkapasitet</td><td>${teamTag(x.team)}</td><td class="mono">${sName(x.sprint)}</td></tr>`).join("")}
+   ${allIss.sort((a,b)=>(a.sev==="crit"?0:1)-(b.sev==="crit"?0:1)).map(x=>`<tr class="click" data-edit="${x.it.id}"><td><span class="dot ${x.sev}"></span></td><td>${esc(x.msg)}</td><td>${esc(x.it.title)} <span class="mono muted">${x.it.act}</span></td><td>${teamTag(x.it.team)}</td><td class="mono">${x.it.sprint?"S"+x.it.sprint:"–"}</td></tr>`).join("")}
+   </tbody></table></div></div>`;
+  return h;
+}
+
+function vTeam(A){
+  if(!S.team||!S.cfg.teams.some(t=>t.id===S.team))S.team=S.cfg.teams[0].id;
+  const T=S.team,items=Object.values(S.items),mine=items.filter(i=>i.team===T);
+  const c=curSprint(),t0=todayT(),before=t0<D(S.cfg.start);
+  const focus=before?1:c;
+  const waiting=[],blocking=[];
+  for(const it of mine)for(const d of it.deps||[]){const p=S.items[d];if(p&&p.team!==T&&p.status!=="ferdig")waiting.push({it,p})}
+  for(const it of items)if(it.team!==T)for(const d of it.deps||[]){const p=S.items[d];if(p&&p.team===T&&p.status!=="ferdig")blocking.push({it,p})}
+  const li=(it,sub)=>{const L=A.ii[it.id]||[],w=worst(L);return `<div class="li"><span class="t" data-edit="${it.id}">${esc(it.title)}</span><span class="row" style="gap:6px">${w?`<span class="dot ${w}" title="${esc(L.map(x=>x.msg).join("\n"))}"></span>`:""}<select class="inline" data-f="status" data-id="${it.id}" ${S.canWrite?"":"disabled"} aria-label="Status">${STATUSES.map(x=>`<option ${x===it.status?"selected":""}>${x}</option>`).join("")}</select></span><span class="sub">${sub}</span></div>`};
+  const fItems=mine.filter(i=>i.sprint===focus);
+  const cap=(S.cfg.capacity[T]||[])[focus-1]||0,ld=A.load[T][focus]||0;
+  let h=`<div class="chips">${S.cfg.teams.map(t=>`<button class="chip" style="${tc(t.id)}" data-team="${t.id}" aria-pressed="${t.id===T}"><i></i>${esc(t.name)}</button>`).join("")}</div>
+  <div class="teamcols">
+   <div class="panel"><div class="panel-h"><h3>${before?"Første sprint":"Denne sprinten"}: ${sName(focus)}</h3><span class="mono muted">${ld}/${cap} t</span></div><div class="panel-b list">
+    ${fItems.map(it=>li(it,`<span class="mono">${it.act}</span> · ${it.hours} t`)).join("")||'<p class="empty">Ingenting planlagt.</p>'}</div></div>
+   <div class="panel"><div class="panel-h"><h3>Vi venter på</h3><span class="muted" style="font-size:12px">${waiting.length}</span></div><div class="panel-b list">
+    ${waiting.map(({it,p})=>`<div class="li"><span class="t" data-edit="${p.id}">${esc(p.title)}</span><span>${teamTag(p.team)}</span><span class="sub">Kommer i ${p.sprint?sName(p.sprint):"<b>ikke planlagt</b>"} · trengs til «${esc(it.title)}» i ${it.sprint?sName(it.sprint):"backlog"}</span></div>`).join("")||'<p class="empty">Ingen åpne avhengigheter til andre team.</p>'}</div></div>
+   <div class="panel"><div class="panel-h"><h3>Andre venter på oss</h3><span class="muted" style="font-size:12px">${blocking.length}</span></div><div class="panel-b list">
+    ${blocking.map(({it,p})=>`<div class="li"><span class="t" data-edit="${p.id}">${esc(p.title)}</span><span>${teamTag(it.team)}</span><span class="sub">Vi leverer i ${p.sprint?sName(p.sprint):"<b>ikke planlagt</b>"} · de trenger den i ${it.sprint?sName(it.sprint):"backlog"} til «${esc(it.title)}»</span></div>`).join("")||'<p class="empty">Ingen andre team venter på oss.</p>'}</div></div>
+  </div>
+  <div class="panel"><div class="panel-h"><h3>Teamets PI-plan</h3><span class="muted" style="font-size:12px">${mine.length} leveranser · ${mine.reduce((n,i)=>n+(+i.hours||0),0)} t</span></div><div class="tbl-wrap"><table>
+   <thead><tr><th>Sprint</th><th>Leveranse</th><th>Safran</th><th class="r">Timer</th><th>Status</th></tr></thead><tbody>
+   ${[...sprints(),0].flatMap(s=>{const r=mine.filter(i=>(i.sprint||0)===s);if(!r.length)return[];const c2=(S.cfg.capacity[T]||[])[s-1]||0,l2=s?A.load[T][s]:0;
+     return r.map((it,k)=>{const w=worst(A.ii[it.id]||[]);return `<tr>${k===0?`<td rowspan="${r.length}" style="vertical-align:top"><b class="mono">${s?"S"+s:"Backlog"}</b>${s?`<div class="mono muted">${l2}/${c2} t</div>`:""}</td>`:""}<td><span class="t" style="cursor:pointer;font-weight:500" data-edit="${it.id}">${esc(it.title)}</span> ${w?`<span class="dot ${w}"></span>`:""}</td><td class="mono muted">${it.act}</td><td class="r mono">${it.hours}</td><td><span class="st st-${it.status}">${it.status}</span></td></tr>`})}).join("")}
+   </tbody></table></div></div>`;
+  return h;
+}
+
+function vSetup(){
+  const c=S.cfg,ro=S.canWrite?"":"disabled";
+  return `<div class="grid2">
+  <div class="panel"><div class="panel-h"><h3>PI-oppsett</h3></div><div class="panel-b" style="display:flex;flex-direction:column;gap:12px">
+   <div class="f"><label for="cfgProject">Prosjekt</label><input id="cfgProject" value="${esc(c.project)}" ${ro}></div>
+   <div class="f2"><div class="f"><label for="cfgPi">PI-navn</label><input id="cfgPi" value="${esc(c.pi)}" ${ro}></div>
+   <div class="f"><label for="cfgStart">Første sprint starter (mandag)</label><input id="cfgStart" type="date" value="${c.start}" ${ro}></div></div>
+   <div class="f2"><div class="f"><label for="cfgMax">Maks timer per leveranse</label><input id="cfgMax" type="number" min="8" step="4" value="${c.maxHours}" ${ro}></div>
+   <div class="f"><label for="cfgIp">Siste sprint</label><select id="cfgIp" ${ro}><option value="1" ${c.ipSprint?"selected":""}>IP-sprint (innovasjon og planlegging)</option><option value="0" ${!c.ipSprint?"selected":""}>Ordinær sprint</option></select></div></div>
+   <div><div class="lbl" style="margin-bottom:6px">Kapasitet per sprint (timeverk)</div><div class="tbl-wrap"><table class="captbl"><thead><tr><th>Team</th>${sprints().map(i=>`<th>S${i}</th>`).join("")}</tr></thead><tbody>
+    ${c.teams.map(t=>`<tr><td>${teamTag(t.id)}</td>${sprints().map(i=>`<td><input type="number" min="0" step="8" id="cap-${t.id}-${i}" data-cap="${t.id}" data-s="${i}" value="${(c.capacity[t.id]||[])[i-1]||0}" ${ro} aria-label="${esc(t.name)} S${i}"></td>`).join("")}</tr>`).join("")}
+   </tbody></table></div></div>
+   <div class="row"><button class="btn primary" id="saveCfg" ${ro}>Lagre oppsett</button></div>
+  </div></div>
+  <div class="panel"><div class="panel-h"><h3>Importer fra Safran</h3></div><div class="panel-b" style="display:flex;flex-direction:column;gap:10px">
+   <p style="margin:0">Eksporter aktivitetslisten fra Safran til Excel og lagre som CSV. Første rad må være kolonnenavn. Disse kolonnene gjenkjennes (norsk eller engelsk):</p>
+   <p class="mono muted" style="margin:0">ID · Navn · WBS · Disiplin/Team · Start · Slutt · Total flyt · Timeverk · Forgjengere · Milepæl</p>
+   <p class="muted" style="margin:0;font-size:12.5px">Datoer kan være <code>05.10.2026</code> eller <code>2026-10-05</code>. Forgjengere skilles med komma eller mellomrom. Timeverk bør være gjenstående ved PI-start. Disiplin må matche en team-kode (${c.teams.map(t=>t.id).join(", ")}).</p>
+   <input type="file" id="csvFile" accept=".csv,.txt" ${ro}>
+   <textarea class="csv" id="csvText" placeholder="…eller lim inn CSV her" ${ro}></textarea>
+   <div class="row"><button class="btn" id="csvParse" ${ro}>Les inn</button></div>
+   ${S.importPreview?`<div class="panel-b" style="background:var(--surface-2);border-radius:3px">${S.importPreview.error?`<span class="pill crit">${esc(S.importPreview.error)}</span>`:`<b>${S.importPreview.acts.length} aktiviteter funnet.</b> ${S.importPreview.acts.filter(a=>a.milestone).length} milepæler. ${S.importPreview.orphans} eksisterende leveranser peker på aktiviteter som ikke finnes i importen.<div class="row" style="margin-top:8px"><button class="btn primary" id="csvApply">Erstatt Safran-aktiviteter</button><button class="btn" id="csvCancel">Avbryt</button></div>`}</div>`:""}
+  </div></div>
+  <div class="panel"><div class="panel-h"><h3>Eksport</h3></div><div class="panel-b" style="display:flex;flex-direction:column;gap:10px">
+   <p style="margin:0">Last ned nedbrytningen som CSV (semikolon, åpnes direkte i Excel). Filen har én rad per leveranse med Safran-ID, sprintdatoer, timer, status og varsler, og kan brukes til å oppdatere fremdrift i Safran.</p>
+   <div class="row"><button class="btn primary" id="exportCsv">Last ned nedbrytning (CSV)</button></div>
+   <p style="margin:8px 0 0">Planen lagres bare i denne nettleseren. For å dele den eller ta sikkerhetskopi: eksporter hele planen som JSON, og la andre importere filen.</p>
+   <div class="row"><button class="btn" id="exportJson">Eksporter hele planen (JSON)</button><label class="btn" for="jsonFile" style="display:inline-block">Importer plan (JSON)</label><input type="file" id="jsonFile" accept=".json,application/json" hidden></div>
+   <textarea class="csv" id="exportOut" hidden readonly></textarea>
+  </div></div>
+  ${S.canWrite?`<div class="panel"><div class="panel-h"><h3>Eksempeldata</h3></div><div class="panel-b" style="display:flex;flex-direction:column;gap:10px">
+   <p style="margin:0">Planen inneholder et fiktivt modifikasjonsprosjekt, «Aurora A». Tilbakestilling erstatter alle aktiviteter, leveranser og oppsett med eksempeldataene. Eksporter planen først hvis du vil beholde den.</p>
+   <div class="row">${S.confirmReset?`<button class="btn danger" id="resetYes">Bekreft: erstatt alt</button><button class="btn" id="resetNo">Avbryt</button>`:`<button class="btn" id="resetDemo">Tilbakestill til eksempeldata</button>`}</div></div></div>`:""}
+  </div>`;
+}
+
+/* ---------- drawer ---------- */
+function renderDrawer(A){
+  const host=$("#overlay");
+  if(!S.editing){host.innerHTML="";return}
+  const it=S.editing,L=it._new?[]:(A.ii[it.id]||[]),ro=S.canWrite?"":"disabled";
+  const act=S.acts[it.act];
+  const others=Object.values(S.items).filter(x=>x.id!==it.id).sort((a,b)=>(a.sprint||99)-(b.sprint||99)||a.team.localeCompare(b.team));
+  const dependents=Object.values(S.items).filter(x=>(x.deps||[]).includes(it.id));
+  host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Leveranse">
+   <div class="dh"><div><div class="mono muted">${it._new?"Ny leveranse":it.id} · ${esc(it.act)}</div><h2>${esc(it.title||"Ny leveranse")}</h2>${act?`<div class="muted" style="font-size:12.5px">${esc(act.name)} · Safran ${fd(act.start)} – ${fd(act.finish)}, flyt ${act.float} d</div>`:""}</div><button class="x" data-close="1" aria-label="Lukk">×</button></div>
+   <div class="db">
+    ${L.length?`<div class="issues">${L.map(x=>`<div class="issue"><span class="dot ${x.sev}"></span><span>${esc(x.msg)}</span></div>`).join("")}</div>`:""}
+    <div class="f"><label for="eTitle">Leveranse (dataobjekt)</label><input id="eTitle" value="${esc(it.title)}" ${ro} placeholder="f.eks. Isometrier tie-ins T01–T06"></div>
+    <div class="f"><label for="eAct">Safran-aktivitet</label><select id="eAct" ${ro}>${Object.values(S.acts).filter(a=>!a.milestone).sort((a,b)=>a.wbs.localeCompare(b.wbs,undefined,{numeric:true})).map(a=>`<option value="${a.id}" ${a.id===it.act?"selected":""}>${a.id} · ${esc(a.name)}</option>`).join("")}</select></div>
+    <div class="f2"><div class="f"><label for="eTeam">Team</label><select id="eTeam" ${ro}>${S.cfg.teams.map(t=>`<option value="${t.id}" ${t.id===it.team?"selected":""}>${esc(t.name)}</option>`).join("")}</select></div>
+     <div class="f"><label for="eSprint">Sprint</label><select id="eSprint" ${ro}><option value="0">Ikke planlagt</option>${sprints().map(i=>`<option value="${i}" ${i===it.sprint?"selected":""}>${sName(i)} (${fd(sStart(i))} – ${fd(sEnd(i))})</option>`).join("")}</select></div></div>
+    <div class="f2"><div class="f"><label for="eHours">Estimat (timeverk)</label><input id="eHours" type="number" min="0" step="4" value="${it.hours}" ${ro}></div>
+     <div class="f"><label for="eStatus">Status</label><select id="eStatus" ${ro}>${STATUSES.map(x=>`<option ${x===it.status?"selected":""}>${x}</option>`).join("")}</select></div></div>
+    <div class="f"><label for="eType">Type dataobjekt</label><select id="eType" ${ro}>${TYPES.map(x=>`<option ${x===it.type?"selected":""}>${x}</option>`).join("")}</select></div>
+    <div class="f"><label for="eDod">Ferdig når (akseptkriterium)</label><textarea id="eDod" rows="2" ${ro} placeholder="f.eks. Utgitt i dokumentsystemet med status IFC, kontrollert av disiplinleder">${esc(it.dod||"")}</textarea></div>
+    <div class="f"><label>Avhenger av (må være ferdig før denne kan fullføres)</label><div class="deps">
+     ${others.map(o=>`<label><input type="checkbox" data-dep="${o.id}" ${(it.deps||[]).includes(o.id)?"checked":""} ${ro}><span>${esc(o.title)} <span class="mono muted">${team(o.team).id} · ${o.sprint?"S"+o.sprint:"backlog"}</span></span></label>`).join("")}
+    </div></div>
+    ${dependents.length?`<div class="f"><label>Andre leveranser som venter på denne</label>${dependents.map(d=>`<div style="font-size:12.5px">${esc(d.title)} <span class="mono muted">${d.team} · ${d.sprint?"S"+d.sprint:"backlog"}</span></div>`).join("")}</div>`:""}
+   </div>
+   <div class="df"><div class="row">${!it._new&&S.canWrite?(S.confirmDel?`<button class="btn danger" id="eDelYes">Bekreft sletting</button>`:`<button class="btn danger" id="eDel">Slett</button>`):""}${!it._new&&S.canWrite?`<button class="btn" id="eSplit">Del i to</button>`:""}</div>
+   <div class="row"><button class="btn" data-close="1">Avbryt</button><button class="btn primary" id="eSave" ${ro}>Lagre</button></div></div>
+  </aside>`;
+}
+function openItem(id){S.editing=clone(S.items[id]);S.confirmDel=false;render();setTimeout(()=>$("#eTitle")?.focus(),0)}
+
+/* ---------- persistence (lokal lagring i nettleseren) ---------- */
+const KEY="pi-slagplan-v1";
+let saveT=null;
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({cfg:S.cfg,activities:Object.values(S.acts),items:Object.values(S.items),saved:new Date().toISOString()}));S.saveOk=true}catch(e){S.saveOk=false;toast("Kunne ikke lagre i nettleseren. Bruk «Eksporter hele planen» for å ta vare på endringene.")}},150)}
+function saveItem(it){const clean={...it};delete clean._new;S.items[clean.id]=clean;render();persist()}
+function delItem(id){delete S.items[id];for(const x0 of Object.values(S.items)){if((x0.deps||[]).includes(id)){const x=clone(x0);x.deps=x.deps.filter(d=>d!==id);S.items[x.id]=x}}render();persist()}
+function saveCfg(c){S.cfg=c;render();persist()}
+const newId=()=>"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function splitItem(id){const it=S.items[id];if(!it)return;const h=+it.hours||0,a=Math.ceil(h/2/4)*4;
+  const b={...clone(it),id:newId(),title:it.title+" (del 2)",hours:Math.max(0,h-a),deps:[it.id],status:"ikke startet",sprint:it.sprint&&it.sprint<S.cfg.sprints?it.sprint+1:it.sprint};
+  saveItem({...it,title:it.title+" (del 1)",hours:a});saveItem(b);toast("Delt i to. Gi delene presise navn.")}
+function replaceAll(data){S.cfg=clone(data.cfg);S.acts={};for(const a of data.activities)S.acts[a.id]=a;S.items={};for(const i of data.items)S.items[i.id]=i;render();persist()}
+function replaceActs(acts){S.acts={};for(const a of acts)S.acts[a.id]=a;render();persist();toast(`Importerte ${acts.length} aktiviteter.`)}
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+/* ---------- CSV ---------- */
+function parseCSV(txt){
+  txt=txt.replace(/^﻿/,"");const first=txt.split(/\r?\n/)[0]||"";
+  const sep=(first.match(/;/g)||[]).length>=(first.match(/,/g)||[]).length?";":(first.includes("\t")?"\t":",");
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<txt.length;i++){const ch=txt[i];
+    if(q){if(ch==='"'){if(txt[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+    else if(ch==='"')q=true;else if(ch===sep){row.push(f);f=""}else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&txt[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}else f+=ch}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()));
+}
+function toISO(s){s=(s||"").trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  if(m=s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/)){const y=m[3].length===2?"20"+m[3]:m[3];return `${y}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`}
+  return null}
+function importActs(txt){
+  const rows=parseCSV(txt);if(rows.length<2)return {error:"Fant ingen datarader."};
+  const H=rows[0].map(h=>h.trim().toLowerCase());
+  const col=(...names)=>H.findIndex(h=>names.some(n=>h===n||h.includes(n)));
+  const ix={id:col("activity id","aktivitet id","aktivitets-id","id"),name:col("navn","name","beskrivelse","description"),wbs:col("wbs"),team:col("disiplin","discipline","team"),
+    start:col("start"),finish:col("slutt","finish","end"),float:col("total flyt","total float","flyt","float"),hours:col("timeverk","hours","timer","budget"),preds:col("forgjeng","predecessor"),ms:col("milep","milestone")};
+  if(ix.id<0||ix.start<0||ix.finish<0)return {error:"Mangler kolonnene ID, Start eller Slutt."};
+  const acts=[];const bad=[];
+  for(const r of rows.slice(1)){const g=k=>ix[k]>=0?(r[ix[k]]||"").trim():"";
+    const id=g("id").replace(/[^A-Za-z0-9_\-.~:@+]/g,"-");if(!id)continue;
+    const st=toISO(g("start")),fi=toISO(g("finish"));if(!st||!fi){bad.push(id);continue}
+    const msv=g("ms").toLowerCase();
+    acts.push({id,name:g("name")||id,wbs:g("wbs")||"",team:(g("team")||S.cfg.teams[0].id).toUpperCase(),start:st,finish:fi,float:+(g("float").replace(",","."))||0,
+      hours:+(g("hours").replace(/\s/g,"").replace(",","."))||0,preds:g("preds").split(/[,;\s]+/).map(x=>x.replace(/(FS|SS|FF|SF)[+-]?\d*d?$/i,"")).filter(Boolean),
+      milestone:["ja","yes","true","1","x"].includes(msv)||(st===fi&&!(+g("hours")))})}
+  if(!acts.length)return {error:bad.length?`Ugyldige datoer for ${bad.length} rader.`:"Fant ingen aktiviteter."};
+  const ids=new Set(acts.map(a=>a.id));
+  return {acts,orphans:Object.values(S.items).filter(i=>!ids.has(i.act)).length};
+}
+function exportCSV(){const A=S._A;const q=v=>{v=String(v??"");return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const head=["Leveranse-ID","Safran-aktivitet","Aktivitetsnavn","Leveranse","Type","Team","Sprint","Sprint start","Sprint slutt","Safran slutt","Timeverk","Status","Avhengigheter","Ferdig når","Varsler"];
+  const rows=Object.values(S.items).sort((a,b)=>a.act.localeCompare(b.act)||(a.sprint||99)-(b.sprint||99)).map(it=>{const a=S.acts[it.act]||{};
+    return [it.id,it.act,a.name,it.title,it.type,it.team,it.sprint?"S"+it.sprint:"",it.sprint?iso(sStart(it.sprint)):"",it.sprint?iso(sEnd(it.sprint)):"",a.finish,it.hours,it.status,(it.deps||[]).join(" "),it.dod,(A.ii[it.id]||[]).map(x=>x.msg).join(" | ")].map(q).join(";")});
+  return "﻿"+[head.join(";"),...rows].join("\r\n")}
+
+/* ---------- events ---------- */
+function toast(msg){const h=$("#toastHost");h.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>h.innerHTML="",3200)}
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("[data-view],[data-selact],[data-actfilter],[data-edit],[data-new],[data-split],[data-close],[data-openact],[data-team].chip,.card,button[id],tr.click");
+  if(!t)return;
+  if(t.dataset.view){S.view=t.dataset.view;try{localStorage.setItem("pi-view",S.view)}catch(_){}history.replaceState(null,"","#"+S.view);render();return}
+  if(t.dataset.openact){const a=S.acts[t.dataset.openact];if(a&&a.milestone&&a.preds&&a.preds[0])S.selAct=a.preds[0];else S.selAct=t.dataset.openact;S.actFilter="all";S.view="nedbrytning";history.replaceState(null,"","#nedbrytning");render();return}
+  if(t.dataset.selact){S.selAct=t.dataset.selact;if(!S.acts[S.selAct])return toast("Aktiviteten finnes ikke i importen.");render();return}
+  if(t.dataset.actfilter){S.actFilter=t.dataset.actfilter;render();return}
+  if(t.dataset.edit){openItem(t.dataset.edit);return}
+  if(t.classList.contains("card")){openItem(t.dataset.item);return}
+  if(t.dataset.new){const a=S.acts[t.dataset.new];S.editing={id:newId(),_new:true,act:a.id,title:"",team:a.team,sprint:0,hours:24,status:"ikke startet",deps:[],type:"Dokument",dod:""};S.confirmDel=false;render();setTimeout(()=>$("#eTitle")?.focus(),0);return}
+  if(t.dataset.split){splitItem(t.dataset.split);return}
+  if(t.dataset.close){S.editing=null;render();return}
+  if(t.classList.contains("chip")&&t.dataset.team){S.team=t.dataset.team;try{localStorage.setItem("pi-team",S.team)}catch(_){}render();return}
+  switch(t.id){
+    case "eSave":{const it=S.editing;const title=$("#eTitle").value.trim();if(!title){toast("Gi leveransen et navn.");$("#eTitle").focus();return}
+      Object.assign(it,{title,act:$("#eAct").value,team:$("#eTeam").value,sprint:+$("#eSprint").value||null,hours:+$("#eHours").value||0,status:$("#eStatus").value,type:$("#eType").value,dod:$("#eDod").value.trim(),
+        deps:[...document.querySelectorAll("[data-dep]:checked")].map(x=>x.dataset.dep)});
+      S.editing=null;saveItem(it);toast("Lagret");return}
+    case "eDel":S.confirmDel=true;render();return;
+    case "eDelYes":{const id=S.editing.id;S.editing=null;delItem(id);toast("Slettet");return}
+    case "eSplit":{const id=S.editing.id;S.editing=null;splitItem(id);return}
+    case "saveCfg":{const c=clone(S.cfg);c.project=$("#cfgProject").value.trim()||c.project;c.pi=$("#cfgPi").value.trim()||c.pi;c.start=$("#cfgStart").value||c.start;c.maxHours=+$("#cfgMax").value||c.maxHours;c.ipSprint=$("#cfgIp").value==="1";
+      document.querySelectorAll("[data-cap]").forEach(i=>{(c.capacity[i.dataset.cap]=c.capacity[i.dataset.cap]||[])[+i.dataset.s-1]=+i.value||0});
+      if(new Date(D(c.start)).getUTCDay()!==1)toast("Merk: startdatoen er ikke en mandag.");else toast("Oppsett lagret");saveCfg(c);return}
+    case "csvParse":{const txt=$("#csvText").value;if(!txt.trim())return toast("Velg en fil eller lim inn CSV først.");S.importPreview=importActs(txt);render();return}
+    case "csvApply":{const acts=S.importPreview.acts;S.importPreview=null;replaceActs(acts);return}
+    case "csvCancel":S.importPreview=null;render();return;
+    case "exportCsv":{const csv=exportCSV();const name=`${S.cfg.pi.replace(/\s+/g,"_")}_nedbrytning.csv`;
+      try{download(name,csv,"text/csv;charset=utf-8");}catch(err){const o=$("#exportOut");o.hidden=false;o.value=csv;o.select();toast("Nedlasting feilet. Kopier teksten.")}return}
+    case "exportJson":{download(`${S.cfg.pi.replace(/\s+/g,"_")}_plan.json`,JSON.stringify({cfg:S.cfg,activities:Object.values(S.acts),items:Object.values(S.items)},null,1),"application/json");return}
+    case "resetDemo":S.confirmReset=true;render();return;
+    case "resetNo":S.confirmReset=false;render();return;
+    case "resetYes":S.confirmReset=false;replaceAll(clone(DEMO));toast("Eksempeldata lastet inn.");return;
+  }
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.editing){S.editing=null;render()}
+  if(e.key==="Enter"&&e.target.classList?.contains("card"))openItem(e.target.dataset.item)});
+document.addEventListener("change",e=>{const t=e.target;
+  if(t.dataset.f&&t.dataset.id){const it=clone(S.items[t.dataset.id]);if(!it)return;const f=t.dataset.f;
+    it[f]=f==="sprint"?(+t.value||null):f==="hours"?(+t.value||0):t.value;saveItem(it);return}
+  if(t.id==="jsonFile"&&t.files[0]){const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(String(r.result));if(!p.cfg||!Array.isArray(p.activities)||!Array.isArray(p.items))throw 0;replaceAll(p);toast("Plan importert.")}catch(_){toast("Filen er ikke en gyldig planfil.")}};r.readAsText(t.files[0]);t.value="";return}
+  if(t.id==="csvFile"&&t.files[0]){const r=new FileReader();r.onload=()=>{S.importPreview=importActs(String(r.result));render()};
+    r.readAsText(t.files[0],/latin|1252/i.test(t.files[0].type)?"windows-1252":"utf-8")}
+});
+document.addEventListener("input",e=>{if(e.target.id==="actSearch"){S.actSearch=e.target.value;clearTimeout(S._st);S._st=setTimeout(()=>{render();const i=$("#actSearch");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},200)}});
+/* drag and drop */
+let dragId=null;
+document.addEventListener("dragstart",e=>{const c=e.target.closest?.(".card");if(!c||!S.canWrite)return;dragId=c.dataset.item;c.classList.add("dragging");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",dragId)}catch(_){}});
+document.addEventListener("dragend",e=>{document.querySelectorAll(".dragging,.over").forEach(x=>x.classList.remove("dragging","over"));dragId=null});
+document.addEventListener("dragover",e=>{const c=e.target.closest?.("[data-drop]");if(!c||!dragId)return;e.preventDefault();document.querySelectorAll(".cell.over").forEach(x=>x!==c&&x.classList.remove("over"));c.classList.add("over")});
+document.addEventListener("drop",e=>{const c=e.target.closest?.("[data-drop]");if(!c||!dragId)return;e.preventDefault();const it=clone(S.items[dragId]);if(!it)return;
+  const ns=+c.dataset.sprint||null,nt=c.dataset.team;if(it.sprint===ns&&it.team===nt)return render();it.sprint=ns;it.team=nt;saveItem(it)});
+
+/* ---------- boot ---------- */
+(function boot(){let data=null;try{const raw=localStorage.getItem(KEY);if(raw)data=JSON.parse(raw)}catch(e){S.saveOk=false}
+  if(!data||!data.cfg)data=clone(DEMO);
+  S.mode="local";S.cfg=data.cfg;S.acts={};for(const a of data.activities)S.acts[a.id]=a;S.items={};for(const i of data.items)S.items[i.id]=i;render();})();
+</script>
+</body>
+</html>
